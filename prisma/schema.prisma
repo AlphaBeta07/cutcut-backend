@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  name           String
+  phoneNumber    String           @unique
+  createdAt      DateTime?        @default(now())
+  inQueue        Boolean?         @default(false)
+  queuedBarberId Int?
+  Queue          Queue?
+  ServiceHistory ServiceHistory[]
+
+  @@index([queuedBarberId])
+  @@index([phoneNumber])
+}
+
+model Barber {
+  id             Int              @id @default(autoincrement())
+  name           String
+  username       String           @unique
+  passwordHash   String
+  lat            Float
+  long           Float
+  createdAt      DateTime?        @default(now())
+  queueEntries   Queue[]
+  serviceHistory ServiceHistory[]
+}
+
+model Queue {
+  id        Int       @id @default(autoincrement())
+  enteredAt DateTime? @default(now())
+  service   String
+  barberId  Int
+  userId    Int       @unique
+  barber    Barber    @relation(fields: [barberId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([barberId, enteredAt])
+}
+
+model ServiceHistory {
+  id       Int       @id @default(autoincrement())
+  barberId Int
+  userId   Int
+  service  String
+  servedAt DateTime? @default(now())
+  barber   Barber    @relation(fields: [barberId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+
+  @@index([barberId, servedAt])
+  @@index([userId, servedAt])
+}
